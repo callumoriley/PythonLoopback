@@ -1,0 +1,7 @@
+PythonLoopback.cpp
+pyproject.toml
+setup.py
+PythonLoopback.egg-info/PKG-INFO
+PythonLoopback.egg-info/SOURCES.txt
+PythonLoopback.egg-info/dependency_links.txt
+PythonLoopback.egg-info/top_level.txt
