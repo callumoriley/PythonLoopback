@@ -2,8 +2,8 @@
 A Python library to interface with the audio being played on a Windows computer
 
 ## Requirements
-Windows SDK 10.0.19041.0\
-Python 3
+- Windows SDK 10.0.19041.0\
+- Python 3
 
 ## Usage
 Start by cloning this repository into a local folder. Then you can use pip to install the library like this:
