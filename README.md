@@ -2,7 +2,7 @@
 A Python library to interface with the audio being played on a Windows computer
 
 ## Requirements
-- Windows SDK 10.0.19041.0\
+- Windows SDK 10.0.19041.0
 - Python 3
 
 ## Usage
