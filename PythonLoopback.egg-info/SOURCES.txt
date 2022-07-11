@@ -1,3 +1,4 @@
+LICENSE
 PythonLoopback.cpp
 README.md
 pyproject.toml

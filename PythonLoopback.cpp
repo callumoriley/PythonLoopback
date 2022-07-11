@@ -71,7 +71,7 @@ PyObject* getCurrentAmplitude(void) {
 
     hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, NULL, NULL);
 
-    if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT)) {
+    if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && numFramesAvailable != 0) {
         for (int i = 0; i < numFramesAvailable; i += 8) { // this code might be slightly off, because with a constant volume source it was changing it's received amplitude
             total += ((*(float*)(pData + i)) * (*(float*)(pData + i)) + (*(float*)(pData + i + 4)) * (*(float*)(pData + i + 4))) / 2;
             // this uses both channels, the first channel audio is stored in the first 4 bytes (32 bits) and the second channel audio is stored in the next 4 bytes (8 bytes, 64 bits total)
@@ -80,10 +80,11 @@ PyObject* getCurrentAmplitude(void) {
         total /= numFramesAvailable;
         total = sqrtf(total);
     }
+    else {
+        total = 0.0;
+    }
 
     hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
-
-    hr = pCaptureClient->GetNextPacketSize(&packetLength);
 
     hr = pAudioClient->Stop();  // Stop recording.
 

@@ -2,3 +2,5 @@ Metadata-Version: 2.1
 Name: PythonLoopback
 Version: 0.1
 Summary: Allows Python to get information about audio currently playing on the system
+Requires-Python: ==3.7.9
+License-File: LICENSE
