@@ -16,6 +16,7 @@
 
 #define REFTIMES_PER_SEC  10000000
 #define REFTIMES_PER_MILLISEC  10000
+#define SLEEP_DURATION 50
 
 #define SAFE_RELEASE(punk) \
 	if((punk) != NULL) \
@@ -43,61 +44,48 @@ PyObject* getCurrentAmplitude(void) {
     BYTE* pData;
     DWORD flags;
 
-    float total = 0; // calculate the RMS amplitude of the current frame
+    float currentMax = 0.0; // calculate the RMS amplitude of the current frame
+    float currentAmplitude;
 
     hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator);
-
     hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice); // this is where it should be configured as loopback
-
     hr = pDevice->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
-
     hr = pAudioClient->GetMixFormat(&pwfx);
-
     hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pwfx, NULL);
-
     hr = pAudioClient->GetBufferSize(&bufferFrameCount);
-
     hr = pAudioClient->GetService(IID_IAudioCaptureClient, (void**)&pCaptureClient);
-
-    hnsActualDuration = (double)REFTIMES_PER_SEC * bufferFrameCount / pwfx->nSamplesPerSec;
-
     hr = pAudioClient->Start();
 
-    Sleep(hnsActualDuration / REFTIMES_PER_MILLISEC / 2);
+    Sleep(SLEEP_DURATION);
 
     hr = pCaptureClient->GetNextPacketSize(&packetLength);
-
-    while (packetLength == 0);
-
     hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, NULL, NULL);
 
     if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && numFramesAvailable != 0) {
-        for (int i = 0; i < numFramesAvailable; i += 8) { // this code might be slightly off, because with a constant volume source it was changing it's received amplitude
-            total += ((*(float*)(pData + i)) * (*(float*)(pData + i)) + (*(float*)(pData + i + 4)) * (*(float*)(pData + i + 4))) / 2;
+        for (int i = 0; i < numFramesAvailable; i += 8) {
+            currentAmplitude = ((*(float*)(pData + i)) + (*(float*)(pData + i + 4))) / 2;
             // this uses both channels, the first channel audio is stored in the first 4 bytes (32 bits) and the second channel audio is stored in the next 4 bytes (8 bytes, 64 bits total)
             // can cast a pointer to the start of float bytes to a float pointer before dereferencing it to convert the bytes into a float
+
+            if (currentAmplitude > currentMax) currentMax = currentAmplitude;
         }
-        total /= numFramesAvailable;
-        total = sqrtf(total);
-    }
-    else {
-        total = 0.0;
     }
 
     hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
-
+    hr = pCaptureClient->GetNextPacketSize(&packetLength);
     hr = pAudioClient->Stop();  // Stop recording.
 
+    CoUninitialize();
+
+Exit:
     CoTaskMemFree(pwfx);
-    
     SAFE_RELEASE(pEnumerator);
     SAFE_RELEASE(pDevice);
     SAFE_RELEASE(pAudioClient);
     SAFE_RELEASE(pCaptureClient);
-    
     CoUninitialize();
 
-    return PyFloat_FromDouble((double)total);
+    return PyFloat_FromDouble((double)currentMax);
 }
 static PyMethodDef PythonLoopback_methods[] = {
     {"get_current_amplitude", (PyCFunction)getCurrentAmplitude, METH_NOARGS, nullptr},
