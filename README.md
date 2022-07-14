@@ -21,6 +21,6 @@ This program simply prints out the current amplitude:
 from PythonLoopback import get_current_amplitude
 
 while True:
-  amp = get_current_amplitude()
-  print(amp)
+    amp = get_current_amplitude()
+    print(amp)
 ```
