@@ -14,3 +14,13 @@ Make sure the last folder in the path is referring to the folder created by git 
 
 ## Development
 This library was developed in Visual Studio 2019 with the v142 platform toolset. The Windows SDK is 10.0.19041.0, I have no idea if it works with any other SDKs. The compilation target is x86, even though I'm using an x64 computer. I have only tested it with Python 3.7.9 with the 32-bit runtime.
+
+## Example program
+This program simply prints out the current amplitude:
+```python
+from PythonLoopback import get_current_amplitude
+
+while True:
+  amp = get_current_amplitude()
+  print(amp)
+```
