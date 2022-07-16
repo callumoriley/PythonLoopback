@@ -1,5 +1,7 @@
 # PythonLoopback
-A Python library to interface with the audio being played on a Windows computer
+A Python library to interface with the audio being played on a Windows computer.
+
+Built using CPython extensions on top of some C++ code that interfaces with WASAPI to get the current audio stream and gets some information about that audio stream.
 
 ## Requirements
 - Windows SDK 10.0.19041.0

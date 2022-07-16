@@ -6,6 +6,7 @@ setup(
     name="PythonLoopback",
     version="0.2",
     description="Allows Python to get information about audio currently playing on the system",
-    python_requires="==3.7.9",
+    python_requires="==3.10.5",
+    platforms=["Windows"],
     ext_modules=[pl_module]
 )
