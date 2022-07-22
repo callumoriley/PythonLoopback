@@ -16,6 +16,8 @@
 
 #define REFTIMES_PER_SEC  10000000
 #define REFTIMES_PER_MILLISEC  10000
+// SLEEP_DURATION in milliseconds. Logic is that human hearing only goes down to 20 Hz, so in a period of 20 Hz
+// the peak of any audible should appear at least once. 1/20Hz = 0.050 s = 50 ms
 #define SLEEP_DURATION 50
 
 #define SAFE_RELEASE(punk) \
