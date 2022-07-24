@@ -39,9 +39,9 @@ import numpy as np
 import simpleaudio as sa
 import time
 
-buffer = record_buffer(1.0)
+audio_buffer = record_buffer(1.0)
 print("Recorded buffer, playing back in 5s")
 time.sleep(5)
-play_obj = sa.play_buffer(buffer, 2, 2, 48000)
+play_obj = sa.play_buffer(audio_buffer, 2, 2, 48000)
 play_obj.wait_done()
 ```
