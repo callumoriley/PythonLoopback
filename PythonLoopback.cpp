@@ -2,6 +2,7 @@
 // Used this working example to get started: https://github.com/NeelOommen/WASAPI-LoopBack
 // Used this guide to create the bindings between Python and C++: https://docs.microsoft.com/en-us/visualstudio/python/working-with-c-cpp-python-in-visual-studio?view=vs-2022
 // Used this guide to help me create Numpy arrays in C++: https://stuff.mit.edu/afs/sipb/project/python/src/python-numeric-22.0/doc/www.pfdubois.com/numpy/html2/numpy-13.html
+// Also used this guide: https://numpy.org/devdocs/reference/c-api/array.html
 
 #pragma comment( lib, "Ole32.lib" )
 
@@ -21,6 +22,7 @@
 // SLEEP_DURATION in milliseconds. Logic is that human hearing only goes down to 20 Hz, so in a period of 20 Hz
 // the peak of any audible should appear at least once. 1/20Hz = 0.050 s = 50 ms
 #define SLEEP_DURATION 50
+#define SAMPLING_RATE 48000
 
 #define EXIT_ON_ERROR(hres) \
 	if (FAILED(hres)) { std::cout<<"\nError Exit Triggered. 0x"<< std::hex << hres; goto Exit; }
@@ -109,14 +111,8 @@ Exit:
     return PyFloat_FromDouble((double)currentMax);
 }
 // records a sound buffer for a specified number of seconds into a numpy array
-PyObject* recordBuffer(void) {
-    //import_array();
-    npy_intp dimensions[] = {3, 2}; // need the first argument to be changed with the required size
-    PyArrayObject* arr = (PyArrayObject*)PyArray_SimpleNew(2, dimensions, NPY_INT);
-    PyArray_FILLWBYTE(arr, 0);
-    
-    return PyArray_Return(arr);
-    /*
+PyObject* recordBuffer(PyObject *, PyObject* o) {
+  
     CoInitialize(nullptr);
     HRESULT hr; // gives results of stuff (errors mostly)
     REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
@@ -132,6 +128,13 @@ PyObject* recordBuffer(void) {
     BOOL bDone = FALSE;
     BYTE* pData;
     DWORD flags;
+
+    int numSamples = 0; // current number of samples
+    int maxNumSamples = SAMPLING_RATE*PyFloat_AsDouble(o);
+
+    npy_intp dimensions[] = { maxNumSamples, 2 }; // need the first argument to be changed with the required size (second argument will always be the same)
+    PyArrayObject* output_buffer = (PyArrayObject*)PyArray_SimpleNew(2, dimensions, NPY_INT);
+    PyArray_FILLWBYTE(output_buffer, 0);
 
     hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator);
     EXIT_ON_ERROR(hr);
@@ -153,24 +156,39 @@ PyObject* recordBuffer(void) {
     hr = pAudioClient->Start();
     EXIT_ON_ERROR(hr);
 
-    while () // while recorded time is less than the set time
+    while (numSamples < maxNumSamples)
     {
         // Sleep for half the buffer duration.
         Sleep(hnsActualDuration / REFTIMES_PER_MILLISEC / 2);
         hr = pCaptureClient->GetNextPacketSize(&packetLength);
         EXIT_ON_ERROR(hr);
-        while (packetLength != 0)
+        BOOL bufferFull = false;
+        while (packetLength != 0 && !bufferFull)
         {
             // Get the available data in buffer
             hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, NULL, NULL);
             EXIT_ON_ERROR(hr);
-            if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
-            {
-                pData = NULL;  // write silence
-            }
 
-            // TODO Copy the available capture data to the audio sink (copy float bytes like in other function)
-            // Numpy array format needs to be such that it's a list of two values (2D array), left value is left channel right value is right channel
+            for (int i = 0; i < numFramesAvailable; i += 8) {
+                if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
+                {
+                    npy_intp position[] = { numSamples, 0 };
+                    *((npy_int*)PyArray_GetPtr(output_buffer, position)) = (npy_int)(32768 * (*(float*)(pData + i)));
+                    position[1] = 1;
+                    *((npy_int*)PyArray_GetPtr(output_buffer, position)) = (npy_int)(32768 * (*(float*)(pData + i + 4)));
+                }
+                else { // write silence
+                    npy_intp position[] = { numSamples, 0 };
+                    *((npy_int*)PyArray_GetPtr(output_buffer, position)) = 0;
+                    position[1] = 1;
+                    *((npy_int*)PyArray_GetPtr(output_buffer, position)) = 0;
+                }
+                numSamples++;
+                if (numSamples >= maxNumSamples) {
+                    bufferFull = true;
+                    break;
+                }
+            }
 
             hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
             EXIT_ON_ERROR(hr);
@@ -190,12 +208,11 @@ Exit:
     SAFE_RELEASE(pCaptureClient);
     CoUninitialize();
 
-    return NULL; // return numpy array with sound buffer
-    */
+    return PyArray_Return(output_buffer); // return numpy array with sound buffer
 }
 static PyMethodDef PythonLoopback_methods[] = {
     {"get_current_amplitude", (PyCFunction)getCurrentAmplitude, METH_NOARGS, nullptr},
-    {"record_buffer", (PyCFunction)recordBuffer, METH_NOARGS, nullptr},
+    {"record_buffer", (PyCFunction)recordBuffer, METH_O, nullptr},
     {nullptr, nullptr, 0, nullptr}
 
 };
@@ -207,6 +224,6 @@ static PyModuleDef PythonLoopback_module = {
     PythonLoopback_methods
 };
 PyMODINIT_FUNC PyInit_PythonLoopback() {
-    import_array();
+    import_array(); // may not need
     return PyModule_Create(&PythonLoopback_module);
 }
