@@ -7,6 +7,7 @@ Built using CPython extensions on top of some C++ code that interfaces with WASA
 - Windows SDK 10.0.19041.0
 - Visual C++ Redistributable for Visual Studio 2015
 - Python 3.10 or higher
+- NumPy (version unknown)
 
 ## Usage
 Start by cloning this repository into a local folder. Then you can use pip to install the library like this:
