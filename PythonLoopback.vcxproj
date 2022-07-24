@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>%LOCALAPPDATA%\Programs\Python\Python310\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%LOCALAPPDATA%\Programs\Python\Python310\lib\site-packages\numpy\core\include;%LOCALAPPDATA%\Programs\Python\Python310\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -113,7 +113,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>%LOCALAPPDATA%\Programs\Python\Python310\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%LOCALAPPDATA%\Programs\Python\Python310\lib\site-packages\numpy\core\include;%LOCALAPPDATA%\Programs\Python\Python310\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -131,7 +131,7 @@
       <PreprocessorDefinitions>NDEBUG</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>%LOCALAPPDATA%\Programs\Python\Python310\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%LOCALAPPDATA%\Programs\Python\Python310\lib\site-packages\numpy\core\include;%LOCALAPPDATA%\Programs\Python\Python310\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,7 +147,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>%LOCALAPPDATA%\Programs\Python\Python310\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%LOCALAPPDATA%\Programs\Python\Python310\lib\site-packages\numpy\core\include;%LOCALAPPDATA%\Programs\Python\Python310\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>

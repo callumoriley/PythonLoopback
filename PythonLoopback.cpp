@@ -1,10 +1,12 @@
 // Reference for capturing audio from a Windows audio stream: https://docs.microsoft.com/en-us/windows/win32/coreaudio/capturing-a-stream
 // Used this working example to get started: https://github.com/NeelOommen/WASAPI-LoopBack
 // Used this guide to create the bindings between Python and C++: https://docs.microsoft.com/en-us/visualstudio/python/working-with-c-cpp-python-in-visual-studio?view=vs-2022
+// Used this guide to help me create Numpy arrays in C++: https://stuff.mit.edu/afs/sipb/project/python/src/python-numeric-22.0/doc/www.pfdubois.com/numpy/html2/numpy-13.html
 
 #pragma comment( lib, "Ole32.lib" )
 
 #include <Python.h>
+#include <numpy/arrayobject.h>
 #include <iostream>
 #include <Audioclient.h>
 #include <audiopolicy.h>
@@ -20,6 +22,8 @@
 // the peak of any audible should appear at least once. 1/20Hz = 0.050 s = 50 ms
 #define SLEEP_DURATION 50
 
+#define EXIT_ON_ERROR(hres) \
+	if (FAILED(hres)) { std::cout<<"\nError Exit Triggered. 0x"<< std::hex << hres; goto Exit; }
 #define SAFE_RELEASE(punk) \
 	if((punk) != NULL) \
 		{(punk)->Release(); (punk) = NULL;}
@@ -29,6 +33,7 @@ const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 const IID IID_IAudioClient = __uuidof(IAudioClient);
 const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
 
+// gets the current amplitude of the sound being played by the computer
 PyObject* getCurrentAmplitude(void) {
     CoInitialize(nullptr);
     HRESULT hr; // gives results of stuff (errors mostly)
@@ -46,24 +51,35 @@ PyObject* getCurrentAmplitude(void) {
     BYTE* pData;
     DWORD flags;
 
-    float currentMax = 0.0; // calculate the RMS amplitude of the current frame
+    float currentMax = NULL; // NULL to return as NaN if there's a problem, set to 0.0 when it starts recording
     float currentAmplitude;
 
     hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator);
+    EXIT_ON_ERROR(hr);
     hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice); // this is where it should be configured as loopback
+    EXIT_ON_ERROR(hr);
     hr = pDevice->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
+    EXIT_ON_ERROR(hr);
     hr = pAudioClient->GetMixFormat(&pwfx);
+    EXIT_ON_ERROR(hr);
     hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pwfx, NULL);
+    EXIT_ON_ERROR(hr);
     hr = pAudioClient->GetBufferSize(&bufferFrameCount);
+    EXIT_ON_ERROR(hr);
     hr = pAudioClient->GetService(IID_IAudioCaptureClient, (void**)&pCaptureClient);
+    EXIT_ON_ERROR(hr);
     hr = pAudioClient->Start();
+    EXIT_ON_ERROR(hr);
 
     Sleep(SLEEP_DURATION);
 
     hr = pCaptureClient->GetNextPacketSize(&packetLength);
+    EXIT_ON_ERROR(hr);
     hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, NULL, NULL);
+    EXIT_ON_ERROR(hr);
 
     if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && numFramesAvailable != 0) {
+        currentMax = 0.0;
         for (int i = 0; i < numFramesAvailable; i += 8) {
             currentAmplitude = ((*(float*)(pData + i)) + (*(float*)(pData + i + 4))) / 2;
             // this uses both channels, the first channel audio is stored in the first 4 bytes (32 bits) and the second channel audio is stored in the next 4 bytes (8 bytes, 64 bits total)
@@ -74,8 +90,11 @@ PyObject* getCurrentAmplitude(void) {
     }
 
     hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
+    EXIT_ON_ERROR(hr);
     hr = pCaptureClient->GetNextPacketSize(&packetLength);
+    EXIT_ON_ERROR(hr);
     hr = pAudioClient->Stop();  // Stop recording.
+    EXIT_ON_ERROR(hr);
 
     CoUninitialize();
 
@@ -89,8 +108,94 @@ Exit:
 
     return PyFloat_FromDouble((double)currentMax);
 }
+// records a sound buffer for a specified number of seconds into a numpy array
+PyObject* recordBuffer(void) {
+    //import_array();
+    npy_intp dimensions[] = {3, 2}; // need the first argument to be changed with the required size
+    PyArrayObject* arr = (PyArrayObject*)PyArray_SimpleNew(2, dimensions, NPY_INT);
+    PyArray_FILLWBYTE(arr, 0);
+    
+    return PyArray_Return(arr);
+    /*
+    CoInitialize(nullptr);
+    HRESULT hr; // gives results of stuff (errors mostly)
+    REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
+    REFERENCE_TIME hnsActualDuration;
+    UINT32 bufferFrameCount;
+    UINT32 numFramesAvailable;
+    IMMDeviceEnumerator* pEnumerator = NULL;
+    IMMDevice* pDevice = NULL; // IMMDevice interface for rendering endpoint device
+    IAudioClient* pAudioClient = NULL; // these guys work together to handle the audio stream
+    IAudioCaptureClient* pCaptureClient = NULL; // this is the stream object I think, where is it configured as loopback
+    WAVEFORMATEX* pwfx = NULL; // contains format information (wFormatTag says that you need to get the rest of the information from the extensible struct)
+    UINT32 packetLength = 0;
+    BOOL bDone = FALSE;
+    BYTE* pData;
+    DWORD flags;
+
+    hr = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator);
+    EXIT_ON_ERROR(hr);
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice); // this is where it should be configured as loopback
+    EXIT_ON_ERROR(hr);
+    hr = pDevice->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&pAudioClient);
+    EXIT_ON_ERROR(hr);
+    hr = pAudioClient->GetMixFormat(&pwfx);
+    EXIT_ON_ERROR(hr);
+    hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, hnsRequestedDuration, 0, pwfx, NULL);
+    EXIT_ON_ERROR(hr);
+    hr = pAudioClient->GetBufferSize(&bufferFrameCount);
+    EXIT_ON_ERROR(hr);
+    hr = pAudioClient->GetService(IID_IAudioCaptureClient, (void**)&pCaptureClient);
+    EXIT_ON_ERROR(hr);
+
+    hnsActualDuration = (double)REFTIMES_PER_SEC * bufferFrameCount / pwfx->nSamplesPerSec;
+
+    hr = pAudioClient->Start();
+    EXIT_ON_ERROR(hr);
+
+    while () // while recorded time is less than the set time
+    {
+        // Sleep for half the buffer duration.
+        Sleep(hnsActualDuration / REFTIMES_PER_MILLISEC / 2);
+        hr = pCaptureClient->GetNextPacketSize(&packetLength);
+        EXIT_ON_ERROR(hr);
+        while (packetLength != 0)
+        {
+            // Get the available data in buffer
+            hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, NULL, NULL);
+            EXIT_ON_ERROR(hr);
+            if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
+            {
+                pData = NULL;  // write silence
+            }
+
+            // TODO Copy the available capture data to the audio sink (copy float bytes like in other function)
+            // Numpy array format needs to be such that it's a list of two values (2D array), left value is left channel right value is right channel
+
+            hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
+            EXIT_ON_ERROR(hr);
+            hr = pCaptureClient->GetNextPacketSize(&packetLength);
+            EXIT_ON_ERROR(hr);
+        }
+    }
+
+    hr = pAudioClient->Stop();
+    EXIT_ON_ERROR(hr);
+
+Exit:
+    CoTaskMemFree(pwfx);
+    SAFE_RELEASE(pEnumerator);
+    SAFE_RELEASE(pDevice);
+    SAFE_RELEASE(pAudioClient);
+    SAFE_RELEASE(pCaptureClient);
+    CoUninitialize();
+
+    return NULL; // return numpy array with sound buffer
+    */
+}
 static PyMethodDef PythonLoopback_methods[] = {
     {"get_current_amplitude", (PyCFunction)getCurrentAmplitude, METH_NOARGS, nullptr},
+    {"record_buffer", (PyCFunction)recordBuffer, METH_NOARGS, nullptr},
     {nullptr, nullptr, 0, nullptr}
 
 };
@@ -102,5 +207,6 @@ static PyModuleDef PythonLoopback_module = {
     PythonLoopback_methods
 };
 PyMODINIT_FUNC PyInit_PythonLoopback() {
+    import_array();
     return PyModule_Create(&PythonLoopback_module);
 }
