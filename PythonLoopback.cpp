@@ -82,7 +82,7 @@ PyObject* getCurrentAmplitude(void) {
 
     if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && numFramesAvailable != 0) {
         currentMax = 0.0;
-        for (int i = 0; i < numFramesAvailable; i += 8) {
+        for (int i = 0; i < numFramesAvailable*8; i += 32) {
             currentAmplitude = ((*(float*)(pData + i)) + (*(float*)(pData + i + 4))) / 2;
             // this uses both channels, the first channel audio is stored in the first 4 bytes (32 bits) and the second channel audio is stored in the next 4 bytes (8 bytes, 64 bits total)
             // can cast a pointer to the start of float bytes to a float pointer before dereferencing it to convert the bytes into a float
@@ -130,7 +130,7 @@ PyObject* recordBuffer(PyObject *, PyObject* o) {
     DWORD flags;
 
     int numSamples = 0; // current number of samples
-    int maxNumSamples = SAMPLING_RATE*PyFloat_AsDouble(o);
+    int maxNumSamples = SAMPLING_RATE*PyFloat_AsDouble(o); // would like to remove the macro and replace it with pwfx->nSamplesPerSec
 
     npy_intp dimensions[] = { maxNumSamples, 2 }; // need the first argument to be changed with the required size (second argument will always be the same)
     PyArrayObject* output_buffer = (PyArrayObject*)PyArray_SimpleNew(2, dimensions, NPY_INT);
@@ -168,14 +168,14 @@ PyObject* recordBuffer(PyObject *, PyObject* o) {
             // Get the available data in buffer
             hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, NULL, NULL);
             EXIT_ON_ERROR(hr);
-
-            for (int i = 0; i < numFramesAvailable; i += 8) {
+            // numFramesAvailable*8, += 32, and +4 works, but sounds grainy
+            for (UINT32 i = 0; i < numFramesAvailable*8; i += 16) { // was originally incrementing by 8
                 if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
                 {
                     npy_intp position[] = { numSamples, 0 };
-                    *((npy_int*)PyArray_GetPtr(output_buffer, position)) = (npy_int)(32768 * (*(float*)(pData + i)));
+                    *((npy_int*)PyArray_GetPtr(output_buffer, position)) = (npy_int)(32767 * (*(float*)(pData + i)));
                     position[1] = 1;
-                    *((npy_int*)PyArray_GetPtr(output_buffer, position)) = (npy_int)(32768 * (*(float*)(pData + i + 4)));
+                    *((npy_int*)PyArray_GetPtr(output_buffer, position)) = (npy_int)(32767 * (*(float*)(pData + i + 4)));
                 }
                 else { // write silence
                     npy_intp position[] = { numSamples, 0 };
