@@ -35,7 +35,6 @@ while True:
 This program records a 1 second buffer and replays it after 5 seconds (requires the simpleaudio library):
 ```python
 from PythonLoopback import record_buffer
-import numpy as np
 import simpleaudio as sa
 import time
 
