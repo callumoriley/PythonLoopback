@@ -2,8 +2,10 @@ LICENSE
 PythonLoopback.cpp
 README.md
 pyproject.toml
+setup.cfg
 setup.py
 PythonLoopback.egg-info/PKG-INFO
 PythonLoopback.egg-info/SOURCES.txt
 PythonLoopback.egg-info/dependency_links.txt
+PythonLoopback.egg-info/requires.txt
 PythonLoopback.egg-info/top_level.txt

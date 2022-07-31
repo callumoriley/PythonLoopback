@@ -5,14 +5,13 @@ pl_module = Extension("PythonLoopback", sources=["PythonLoopback.cpp"], include_
 
 setup(
     name="PythonLoopback",
-    packages=["PythonLoopback"],
     version="0.3",
     license="GPLv3",
     description="Allows Python to get information about audio currently playing on the system",
     author="Callum O'Riley",
     author_email="callumchristopheroriley@gmail.com",
     url="https://github.com/callumoriley/PythonLoopback",
-    keywords=["windows", "audio", "loopback"]
+    keywords=["windows", "audio", "loopback"],
     python_requires=">=3.10.0",
     platforms=["Windows"],
     ext_modules=[pl_module],

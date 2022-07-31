@@ -2,6 +2,18 @@ Metadata-Version: 2.1
 Name: PythonLoopback
 Version: 0.3
 Summary: Allows Python to get information about audio currently playing on the system
+Home-page: https://github.com/callumoriley/PythonLoopback
+Author: Callum O'Riley
+Author-email: callumchristopheroriley@gmail.com
+License: GPLv3
+Keywords: windows,audio,loopback
 Platform: Windows
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: License :: OSI Approved :: GPLv3
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.10
 Requires-Python: >=3.10.0
 License-File: LICENSE
