@@ -10,7 +10,7 @@ Built using CPython extensions on top of some C++ code that interfaces with WASA
 - NumPy (version unknown)
 
 ## Usage
-If you want to download directly from the GitHub repository, start by cloning this repository into a local folder. Then you can use pip to install the library like this:
+If you want to download directly from the GitHub repository, start by cloning or downloading this repository into a local folder. Then you can use pip to install the library like this:
 ```
 pip install --user C:\Users\username\PythonLoopback
 ```
