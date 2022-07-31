@@ -16,6 +16,11 @@ pip install --user C:\Users\username\PythonLoopback
 ```
 Make sure the last folder in the path is referring to the folder created by git clone.
 
+You can also download this project from PyPI using:
+```
+pip install --user PythonLoopback
+```
+
 ## Functions
 **get_current_amplitude()**
 - Gets the amplitude of the system audio
@@ -30,7 +35,7 @@ Make sure the last folder in the path is referring to the folder created by git 
 ## Development
 This library was developed in Visual Studio 2019 with the v142 platform toolset. The Windows SDK is 10.0.19041.0, I have no idea if it works with any other SDKs. I have tested using Python 3.10.5 and 3.10.4 (both 64-bit runtime), as well as 3.7.9 (32-bit runtime). It should be compatible with anything above Python 3.7.9, but I haven't tested that yet.
 
-## Example program
+## Example programs
 This program simply prints out the current amplitude:
 ```python
 from PythonLoopback import get_current_amplitude
