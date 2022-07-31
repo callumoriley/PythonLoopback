@@ -20,7 +20,6 @@ You can also download this project from PyPI using:
 ```
 pip install --user PythonLoopback
 ```
-
 ## Functions
 **get_current_amplitude()**
 - Gets the amplitude of the system audio
