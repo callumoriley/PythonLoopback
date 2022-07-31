@@ -16,6 +16,7 @@ setup(
     python_requires=">=3.10.0",
     platforms=["Windows"],
     ext_modules=[pl_module],
+    install_requires=["numpy"],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
